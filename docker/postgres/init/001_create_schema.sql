@@ -77,9 +77,9 @@ CREATE TABLE IF NOT EXISTS fact_news (
 -- Fact: SteamSpy statistics snapshot
 CREATE TABLE IF NOT EXISTS fact_steamspy_stats (
     stats_id BIGSERIAL PRIMARY KEY,
-    timestamp_id BIGINT REFERENCES dim_timestamp(timestamp_id),
+    timestamp_id BIGINT NOT NULL REFERENCES dim_timestamp(timestamp_id),
     etl_run_id BIGINT NOT NULL REFERENCES dim_etl_run(etl_run_id),
-    app_id INT REFERENCES dim_app(app_id),
+    app_id INT NOT NULL REFERENCES dim_app(app_id),
     owners_min INT,
     owners_max INT,
     ccu INT,
@@ -93,7 +93,8 @@ CREATE TABLE IF NOT EXISTS fact_steamspy_stats (
     price NUMERIC(12,2),
     initialprice NUMERIC(12,2),
     discount NUMERIC(5,2),
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    CHECK (owners_min IS NULL OR owners_max IS NULL OR owners_min <= owners_max)
 );
 
 -- Indexes to speed up joins
@@ -103,4 +104,5 @@ CREATE INDEX IF NOT EXISTS idx_fact_news_etl ON fact_news (etl_run_id);
 CREATE INDEX IF NOT EXISTS idx_fact_steamspy_ts ON fact_steamspy_stats (timestamp_id);
 CREATE INDEX IF NOT EXISTS idx_fact_steamspy_app ON fact_steamspy_stats (app_id);
 CREATE INDEX IF NOT EXISTS idx_fact_steamspy_etl ON fact_steamspy_stats (etl_run_id);
+CREATE INDEX IF NOT EXISTS idx_fact_steamspy_app_ts ON fact_steamspy_stats (app_id, timestamp_id);
 CREATE INDEX IF NOT EXISTS idx_fact_news_app_ts ON fact_news (app_id, timestamp_id);

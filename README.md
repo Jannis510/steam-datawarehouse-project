@@ -1,4 +1,4 @@
-# Datenmodell-Dokumentation – Steam News & SteamSpy Data Warehouse
+﻿# Datenmodell-Dokumentation – Steam News & SteamSpy Data Warehouse
 
 ## 1. Überblick
 
@@ -13,11 +13,19 @@ Dieses Data Warehouse integriert zwei unabhängige Datenquellen: Steam News API 
    cp .env.example .env
    ```
 
-3. Container starten:
+3. Container starten (Standard ohne Superset):
 
    ```bash
    docker compose up -d
    ```
+
+   Optional (Superset):
+
+   ```bash
+   docker compose --profile superset up -d superset
+   ```
+
+   Standardstart bringt Postgres + pgAdmin hoch; Superset ist optional per Profile.
 
 4. Dienste (Standardwerte aus `.env.example`):
    * **PostgreSQL**: `localhost:5432`, DB `dwh`, User/Pass `dwh`/`dwh`
@@ -47,7 +55,7 @@ Dieses Data Warehouse integriert zwei unabhängige Datenquellen: Steam News API 
 
 **Im Docker-Compose-Stack**
 
-* Standard `docker compose up` startet nur Postgres + pgAdmin. Für den ETL-Run muss das Profil explizit aktiviert werden.
+* Standard `docker compose up` startet nur Postgres + pgAdmin. Für ETL und Superset müssen Profile explizit aktiviert werden.
 
 * Einmaligen ETL-Run starten (profil-gated, damit der Service nicht automatisch mit hochfährt):
   ```bash
@@ -68,7 +76,7 @@ Dieses Data Warehouse integriert zwei unabhängige Datenquellen: Steam News API 
 
 * ETL + Superset + pgAdmin in einem Kommando hochfahren:
   ```bash
-  docker compose --profile etl up --build etl superset pgadmin
+  docker compose --profile etl --profile superset up --build etl superset pgadmin
   ```
   Dabei läuft das ETL einmal durch, während Superset und pgAdmin weiter als UI-Container verfügbar bleiben.
 
@@ -81,6 +89,7 @@ Dieses Data Warehouse integriert zwei unabhängige Datenquellen: Steam News API 
   * Host ist innerhalb des Docker-Netzwerks `postgres`.
 * Nach einem ETL-Run steht das DWH-Schema `dwh` fuer Dashboards und Charts bereit.
 * Beispiel-Abfragen liegen in `docker/postgres/init/sql queries` und koennen in Superset oder pgAdmin verwendet werden.
+* Hinweis: Wenn `SUPERSET_DB_*` in `.env` geändert werden, muss auch `docker/postgres/init/002_superset_user.sql` angepasst werden.
 
 **Warum sehe ich keine Tabellen?**
 
@@ -100,8 +109,16 @@ Dieses Data Warehouse integriert zwei unabhängige Datenquellen: Steam News API 
 
 Nach einem ETL-Run kann ein kurzer Smoke-Test ausgefuehrt werden:
 
+**Linux/macOS**
+
 ```bash
-psql -h localhost -U dwh -d dwh -f scripts/smoke_test.sql
+cat scripts/smoke_test.sql | docker compose exec -T postgres psql -U dwh -d dwh
+```
+
+**Windows (PowerShell)**
+
+```powershell
+Get-Content scripts\smoke_test.sql | docker compose exec -T postgres psql -U dwh -d dwh
 ```
 
 ---

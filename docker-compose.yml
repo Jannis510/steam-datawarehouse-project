@@ -38,19 +38,22 @@ services:
       context: ./docker/superset
       dockerfile: Dockerfile
     container_name: ${SUPERSET_CONTAINER_NAME:-dwh-superset}
+    profiles: ["superset"]
     env_file:
       - .env
     environment:
-      - ADMIN_USERNAME=admin
-      - ADMIN_EMAIL=admin@superset.com
-      - ADMIN_PASSWORD=admin
-      - SUPERSET_SECRET_KEY=change-me
-      - SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://superset:superset@postgres:5432/superset
+      - ADMIN_USERNAME=${SUPERSET_ADMIN_USERNAME:-admin}
+      - ADMIN_EMAIL=${SUPERSET_ADMIN_EMAIL:-admin@example.com}
+      - ADMIN_PASSWORD=${SUPERSET_ADMIN_PASSWORD:-admin}
+      - SUPERSET_SECRET_KEY=${SUPERSET_SECRET_KEY:-change-me}
+      - SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://${SUPERSET_DB_USER:-superset}:${SUPERSET_DB_PASSWORD:-superset}@postgres:5432/${SUPERSET_DB_NAME:-superset}
     ports:
       - "${SUPERSET_PORT:-8088}:8088"
     depends_on:
       postgres:
         condition: service_healthy
+    volumes:
+      - superset-home:/app/superset_home
     restart: unless-stopped
 
   etl:
