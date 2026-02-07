@@ -295,3 +295,16 @@ Jede Tabelle besitzt grundlegende Indizes für Timestamp- und App-bezogene Joins
 * Programmcode: `scripts/`, `docker/`
 * Kurzbericht (3-5 Seiten): `docs/report/report.md` oder `docs/report/report.pdf`
 * Kurzpraesentation: `docs/presentation/` (Slides/PDF)
+
+
+## SQL-Dump / Datenbasis
+
+Der vollständige Datenbank-Dump (Custom-Format) wurde aufgrund der Dateigröße
+nicht im Git-Repository abgelegt.
+
+- Format: PostgreSQL Custom Backup (.backup)
+- Erzeugung: pgAdmin (Docker), nach vollständigem Initial-ETL
+- Validierung: Restore-Test in separater Datenbank + Smoke-Checks
+
+Download (Hessenbox):
+https://next.hessenbox.de/index.php/s/abzGnaj43oW6fwd
