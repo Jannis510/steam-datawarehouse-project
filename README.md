@@ -62,12 +62,14 @@ Dieses Data Warehouse integriert zwei unabhängige Datenquellen: Steam News API 
   docker compose --profile etl up --build etl
   ```
   Der Service nutzt automatisch `POSTGRES_HOST=postgres` und lädt zusätzlich Werte aus `.env`.
+  Hinweis: Beim Container-Start wird der ETL immer einmal initial ausgeführt.
 
 * Wiederkehrenden ETL-Run konfigurieren (optional):
   * In `.env` kann ein Cron-Intervall gesetzt werden, z. B. täglich um Mitternacht:
     ```bash
     ETL_CRON_SCHEDULE=0 0 * * *
     ```
+  * Hinweis: Der inkrementelle Lauf führt immer einen vollständigen SteamSpy-Snapshot aus.
   * Beim Container-Start wird der ETL **einmal** vollständig ausgeführt. Danach läuft standardmäßig ein **inkrementeller** ETL-Run (nur neue News seit dem letzten Timestamp) gemäß Cron-Intervall.
   * Optional kann das Cron-Skript überschrieben werden:
     ```bash
