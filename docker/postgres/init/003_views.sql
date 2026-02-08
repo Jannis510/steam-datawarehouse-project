@@ -72,6 +72,15 @@ FROM dwh.dim_app a
 LEFT JOIN dwh.vw_app_latest_metrics m ON m.app_id = a.app_id
 LEFT JOIN dwh.vw_app_news_7d_30d n ON n.app_id = a.app_id;
 
+-- View: vw_app_overview_latest
+-- Grain: 1 row per app_id; only rows from the latest snapshot_date across vw_app_overview.
+CREATE OR REPLACE VIEW dwh.vw_app_overview_latest AS
+SELECT *
+FROM dwh.vw_app_overview
+WHERE snapshot_date = (
+    SELECT MAX(snapshot_date) FROM dwh.vw_app_overview
+);
+
 -- View: vw_app_timeline_daily
 -- Grain: 1 row per (app_id, date); combine daily SteamSpy snapshot with daily news count.
 -- Assumption: daily SteamSpy value = latest snapshot within that day; news_count defaults to 0.
