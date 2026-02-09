@@ -1,4 +1,4 @@
 .env
 .idea/
 
-.dump
+/dumps/*.dump
