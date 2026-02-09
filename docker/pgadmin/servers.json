@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "dwh-postgres",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "dwh",
+      "Username": "dwh",
+      "SSLMode": "prefer",
+      "ConnectNow": true
+    }
+  }
+}

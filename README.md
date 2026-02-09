@@ -32,7 +32,7 @@ Dieses Data Warehouse integriert zwei unabhängige Datenquellen: Steam News API 
    * **pgAdmin4** (Web-UI): http://localhost:5050 (Login: `admin@example.com` / `admin`)
    * **Apache Superset**: http://localhost:8088 (Login: `admin` / `admin`, konfigurierbar in `.env`)
 
-4. In pgAdmin einen neuen Server mit Host `postgres`, Port `5432`, Benutzer `dwh` und Passwort `dwh` anlegen, damit die fertige DWH-Struktur sichtbar ist.
+4. pgAdmin bringt den Postgres-Server bereits vorkonfiguriert mit und verbindet sich automatisch. Falls pgAdmin bereits einmal gestartet wurde, kann das importierte Server-Setup im Volume fehlen; in dem Fall `docker compose down -v` ausfuehren und neu starten.
 
 ### ETL ausführen
 
