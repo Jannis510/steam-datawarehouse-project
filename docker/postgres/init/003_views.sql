@@ -1,10 +1,7 @@
-﻿-- Analysis views for Superset (Steam News + SteamSpy)
-
--- View: vw_app_latest_metrics
--- Grain: 1 row per app_id; latest SteamSpy snapshot.
-CREATE OR REPLACE VIEW dwh.vw_app_latest_metrics AS
+﻿CREATE OR REPLACE VIEW dwh.vw_app_metrics_by_etl_run AS
 WITH ranked AS (
     SELECT
+        f.etl_run_id,
         f.app_id,
         f.ccu,
         f.owners_min,
@@ -13,11 +10,15 @@ WITH ranked AS (
         f.positive,
         f.negative,
         t.ts,
-        ROW_NUMBER() OVER (PARTITION BY f.app_id ORDER BY t.ts DESC) AS rn
+        ROW_NUMBER() OVER (
+            PARTITION BY f.etl_run_id, f.app_id
+            ORDER BY t.ts DESC
+        ) AS rn
     FROM dwh.fact_steamspy_stats f
     JOIN dwh.dim_timestamp t ON t.timestamp_id = f.timestamp_id
 )
 SELECT
+    etl_run_id,
     app_id,
     ccu,
     owners_min,
@@ -29,35 +30,54 @@ SELECT
 FROM ranked
 WHERE rn = 1;
 
--- View: vw_app_news_7d_30d
--- Grain: 1 row per app_id; rolling news counts using anchor_date from max dim_timestamp.
--- Assumption: anchor_date = max(dim_timestamp.ts::date) for reproducible windows.
-CREATE OR REPLACE VIEW dwh.vw_app_news_7d_30d AS
-WITH anchor AS (
-    SELECT MAX(ts::date) AS anchor_date
-    FROM dwh.dim_timestamp
+
+-- ------------------------------------------------------------
+-- View: vw_app_news_7d_30d_asof_etl_run
+-- Grain: 1 row per (etl_run_id, app_id); rolling news counts anchored at etl_run.started_at (as-of, timestamp-precise).
+-- Performance: consider only last 30 successful runs (change LIMIT as needed).
+-- ------------------------------------------------------------
+CREATE OR REPLACE VIEW dwh.vw_app_news_7d_30d_asof_etl_run AS
+WITH run_anchor AS (
+    SELECT
+        er.etl_run_id,
+        er.started_at AS anchor_ts
+    FROM dwh.dim_etl_run er
+    WHERE er.status = 'success'
+    ORDER BY er.started_at DESC, er.etl_run_id DESC
+    LIMIT 30
 ),
 news AS (
     SELECT
         n.app_id,
-        t.ts::date AS news_date
+        t.ts AS news_ts
     FROM dwh.fact_news n
     JOIN dwh.dim_timestamp t ON t.timestamp_id = n.timestamp_id
 )
 SELECT
+    ra.etl_run_id,
     n.app_id,
-    COUNT(*) FILTER (WHERE n.news_date >= a.anchor_date - INTERVAL '6 days') AS news_count_7d,
-    COUNT(*) FILTER (WHERE n.news_date >= a.anchor_date - INTERVAL '29 days') AS news_count_30d
-FROM news n
-CROSS JOIN anchor a
-GROUP BY n.app_id;
+    COUNT(*) FILTER (
+        WHERE n.news_ts <= ra.anchor_ts
+          AND n.news_ts >= (ra.anchor_ts - INTERVAL '6 days')
+    ) AS news_count_7d,
+    COUNT(*) FILTER (
+        WHERE n.news_ts <= ra.anchor_ts
+          AND n.news_ts >= (ra.anchor_ts - INTERVAL '29 days')
+    ) AS news_count_30d
+FROM run_anchor ra
+JOIN news n ON TRUE
+GROUP BY ra.etl_run_id, n.app_id;
 
--- View: vw_app_overview
--- Grain: 1 row per app_id; app name + latest metrics + news counts.
-CREATE OR REPLACE VIEW dwh.vw_app_overview AS
+
+-- ------------------------------------------------------------
+-- View: vw_app_overview_by_etl_run
+-- Grain: 1 row per (etl_run_id, app_id); app name + metrics (from this run) + news counts (as-of this run).
+-- ------------------------------------------------------------
+CREATE OR REPLACE VIEW dwh.vw_app_overview_by_etl_run AS
 SELECT
-    a.app_id,
+    m.app_id,
     a.app_name,
+    m.etl_run_id,
     m.snapshot_date,
     m.ccu,
     m.owners_min,
@@ -65,68 +85,27 @@ SELECT
     m.userscore,
     m.positive,
     m.negative,
-    n.news_count_7d,
-    n.news_count_30d,
-    (m.ccu::numeric / NULLIF(n.news_count_30d, 0)) AS ccu_per_news_30d
-FROM dwh.dim_app a
-LEFT JOIN dwh.vw_app_latest_metrics m ON m.app_id = a.app_id
-LEFT JOIN dwh.vw_app_news_7d_30d n ON n.app_id = a.app_id;
+    COALESCE(n.news_count_7d, 0)  AS news_count_7d,
+    COALESCE(n.news_count_30d, 0) AS news_count_30d,
+    (m.ccu::numeric / NULLIF(COALESCE(n.news_count_30d, 0), 0)) AS ccu_per_news_30d
+FROM dwh.vw_app_metrics_by_etl_run m
+JOIN dwh.dim_app a ON a.app_id = m.app_id
+LEFT JOIN dwh.vw_app_news_7d_30d_asof_etl_run n
+  ON n.app_id = m.app_id AND n.etl_run_id = m.etl_run_id;
 
--- View: vw_app_overview_latest
--- Grain: 1 row per app_id; only rows from the latest snapshot_date across vw_app_overview.
-CREATE OR REPLACE VIEW dwh.vw_app_overview_latest AS
+
+
+-- ------------------------------------------------------------
+-- View: vw_app_overview_latest_etl_run
+-- Grain: 1 row per app_id; only rows from the latest successful ETL run (by started_at).
+-- ------------------------------------------------------------
+CREATE OR REPLACE VIEW dwh.vw_app_overview_latest_etl_run AS
 SELECT *
-FROM dwh.vw_app_overview
-WHERE snapshot_date = (
-    SELECT MAX(snapshot_date) FROM dwh.vw_app_overview
+FROM dwh.vw_app_overview_by_etl_run
+WHERE etl_run_id = (
+    SELECT er.etl_run_id
+    FROM dwh.dim_etl_run er
+    WHERE er.status = 'success'
+    ORDER BY er.started_at DESC, er.etl_run_id DESC
+    LIMIT 1
 );
-
--- View: vw_app_timeline_daily
--- Grain: 1 row per (app_id, date); combine daily SteamSpy snapshot with daily news count.
--- Assumption: daily SteamSpy value = latest snapshot within that day; news_count defaults to 0.
-CREATE OR REPLACE VIEW dwh.vw_app_timeline_daily AS
-WITH steamspy_daily AS (
-    SELECT DISTINCT ON (f.app_id, t.ts::date)
-        f.app_id,
-        t.ts::date AS date,
-        f.ccu,
-        f.owners_min,
-        f.owners_max
-    FROM dwh.fact_steamspy_stats f
-    JOIN dwh.dim_timestamp t ON t.timestamp_id = f.timestamp_id
-    ORDER BY f.app_id, t.ts::date, t.ts DESC
-),
-news_daily AS (
-    SELECT
-        n.app_id,
-        t.ts::date AS date,
-        COUNT(*) AS news_count
-    FROM dwh.fact_news n
-    JOIN dwh.dim_timestamp t ON t.timestamp_id = n.timestamp_id
-    GROUP BY n.app_id, t.ts::date
-)
-SELECT
-    COALESCE(s.app_id, n.app_id) AS app_id,
-    a.app_name,
-    COALESCE(s.date, n.date) AS date,
-    s.ccu,
-    s.owners_min,
-    s.owners_max,
-    COALESCE(n.news_count, 0) AS news_count
-FROM steamspy_daily s
-FULL OUTER JOIN news_daily n
-    ON n.app_id = s.app_id AND n.date = s.date
-LEFT JOIN dwh.dim_app a
-    ON a.app_id = COALESCE(s.app_id, n.app_id);
-
--- View: vw_update_type_daily
--- Grain: 1 row per (date, type_name); count news by update type.
-CREATE OR REPLACE VIEW dwh.vw_update_type_daily AS
-SELECT
-    t.ts::date AS date,
-    COALESCE(ut.type_name, 'unknown') AS type_name,
-    COUNT(*) AS news_count
-FROM dwh.fact_news n
-JOIN dwh.dim_timestamp t ON t.timestamp_id = n.timestamp_id
-LEFT JOIN dwh.dim_update_typ ut ON ut.update_type_id = n.update_type_id
-GROUP BY t.ts::date, COALESCE(ut.type_name, 'unknown');
