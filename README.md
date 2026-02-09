@@ -34,6 +34,32 @@ Dieses Data Warehouse integriert zwei unabhängige Datenquellen: Steam News API 
 
 4. pgAdmin bringt den Postgres-Server bereits vorkonfiguriert mit und verbindet sich automatisch. Falls pgAdmin bereits einmal gestartet wurde, kann das importierte Server-Setup im Volume fehlen; in dem Fall `docker compose down -v` ausfuehren und neu starten.
 
+### Daten-Dump automatisch importieren (optional)
+
+Wenn du einen Data-only Dump hast, kannst du ihn beim ersten Start automatisch laden:
+
+1. Dump-Datei in `dumps/` ablegen (Ordner wird lokal angelegt, bleibt in Git ignoriert).
+2. In `.env` die Datei setzen, z. B.:
+   ```bash
+   POSTGRES_DUMP_FILE=/dumps/dwh_data.dump
+   POSTGRES_SMOKE_TEST=1
+   ```
+3. `docker compose up -d` starten.
+
+Hinweise:
+* Der Import laeuft **nur beim ersten Start** mit leerem Volume (Docker-Init).
+* Unterstuetzte Formate: `.sql` (data-only) sowie Custom Dumps `.dump` / `.backup`.
+* Der Smoke-Test wird nach dem Import ausgefuehrt, wenn `POSTGRES_SMOKE_TEST=1` gesetzt ist.
+
+### Data-only Dump erzeugen
+
+Nutze diese Kommandos, um einen Data-only Dump im Custom-Format zu erstellen:
+
+```bash
+docker compose exec -T postgres pg_dump -U dwh -d dwh --data-only --format=c -f /tmp/dwh_data.dump
+docker compose cp postgres:/tmp/dwh_data.dump dumps/dwh_data.dump
+```
+
 ### ETL ausführen
 
 **Lokal (Host)**
