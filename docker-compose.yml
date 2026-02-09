@@ -61,6 +61,7 @@ services:
         condition: service_healthy
     volumes:
       - superset-home:/app/superset_home
+      - ./imports/superset:/app/imports:ro
     restart: unless-stopped
 
   etl:

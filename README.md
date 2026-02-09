@@ -119,6 +119,23 @@ docker compose cp postgres:/tmp/dwh_data.dump dumps/dwh_data.dump
 * Beispiel-Abfragen liegen in `docker/postgres/init/sql queries` und koennen in Superset oder pgAdmin verwendet werden.
 * Hinweis: Wenn `SUPERSET_DB_*` in `.env` geändert werden, muss auch `docker/postgres/init/002_superset_user.sql` angepasst werden.
 
+### Superset Dashboards automatisch importieren (optional)
+
+Die Dashboards aus `imports/superset` koennen beim ersten Start automatisch importiert werden:
+
+1. Sicherstellen, dass die ZIP-Exports in `imports/superset` liegen.
+2. In `.env` aktivieren:
+   ```bash
+   SUPERSET_IMPORT_DASHBOARDS=1
+   SUPERSET_IMPORT_DIR=/app/imports
+   SUPERSET_IMPORT_OVERWRITE=1
+   ```
+3. `docker compose --profile superset up -d superset` starten.
+
+Hinweise:
+* Der Import laeuft nur einmal (Marker in `superset-home`). Fuer einen erneuten Import den Marker loeschen oder das Volume neu erstellen.
+* Maskierte Passwoerter in den ZIP-Exports werden beim Import automatisch ersetzt. Quelle ist `SUPERSET_IMPORT_SQLALCHEMY_URI` (falls gesetzt), sonst `DWH_SQLALCHEMY_URI`.
+
 **Warum sehe ich keine Tabellen?**
 
 * Beim allerersten Start mit leerem Volume legt Postgres das Schema automatisch aus `docker/postgres/init/001_create_schema.sql` an.

@@ -7,6 +7,7 @@ COPY superset-init.sh /superset-init.sh
 RUN chmod +x /superset-init.sh
 
 COPY superset_config.py /app/superset_config.py
+COPY patch_superset_imports.py /app/patch_superset_imports.py
 ENV SUPERSET_CONFIG_PATH=/app/superset_config.py
 
 ENTRYPOINT ["/superset-init.sh"]
