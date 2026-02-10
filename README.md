@@ -217,6 +217,8 @@ Get-Content scripts\smoke_test.sql | docker compose exec -T postgres psql -U dwh
 
 ## 4. Mapping: SteamSpy API → DWH
 
+Hinweis: Es wird nur die erste Seite des SteamSpy-`all`-Endpoints geladen (page=0). Damit werden die groessten Apps nach Owners abgedeckt; weitere Seiten sind fuer das Uni-Projekt bewusst ausgeklammert.
+
 ### Beispiel-API Response
 
 ```

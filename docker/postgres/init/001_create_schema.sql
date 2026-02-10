@@ -106,3 +106,5 @@ CREATE INDEX IF NOT EXISTS idx_fact_steamspy_app ON fact_steamspy_stats (app_id)
 CREATE INDEX IF NOT EXISTS idx_fact_steamspy_etl ON fact_steamspy_stats (etl_run_id);
 CREATE INDEX IF NOT EXISTS idx_fact_steamspy_app_ts ON fact_steamspy_stats (app_id, timestamp_id);
 CREATE INDEX IF NOT EXISTS idx_fact_news_app_ts ON fact_news (app_id, timestamp_id);
+CREATE INDEX IF NOT EXISTS idx_fact_steamspy_app_run ON fact_steamspy_stats (app_id, etl_run_id);
+CREATE INDEX IF NOT EXISTS idx_dim_etl_run_status_started ON dim_etl_run (status, started_at DESC, etl_run_id DESC);
