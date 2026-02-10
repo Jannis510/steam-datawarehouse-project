@@ -1,5 +1,7 @@
 # Mapping: Steam News API -> DWH
 
+URL (Beispiel für CounterStrike - AppID 730): https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=730
+
 ## Beispiel (kurz)
 
 ```

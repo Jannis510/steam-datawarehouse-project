@@ -1,14 +1,22 @@
 # Steam News & SteamSpy Data Warehouse
 
 DWH-Projekt, das Steam News und SteamSpy vereinheitlicht (Postgres + optional Superset) und über ein Python-ETL befüllt wird.
-
 Wichtig: Die Docker-Defaults sind bewusst einfach gehalten und nicht für produktiven Betrieb gedacht. Der Stack dient der lokalen Entwicklung, dem Lernen und der Visualisierung eines DWH.
 
 ## Schnellstart (Docker)
 
-Für einen Schnellstart ohne vorherigen ETL Prozess kann ein SQL-Dump importiert werden. Dieser muss lediglich in `dumps/` liegen. Und wird beim ersten Start des Containers automatisch importiert.
-Ein passender Dump befindet sich hier: Hessenbox-Link - https://next.hessenbox.de/index.php/s/abzGnaj43oW6fwd
-Für weitere Informationen bezüglich Import und Export von Daten siehe die Abschnitt "Daten-Dump (Import)" "Data-only Dump erzeugen".
+Es gibt zwei empfohlene Wege für den Einstieg:
+- Empfohlen (reproduzierbar): ETL-Skripte ausführen und Daten selbst laden
+- Optional (Demo/Visualisierung): SQL-Dump importieren, damit Dashboards sofort Daten anzeigen
+
+Standarddienste (aus `.env.example`):
+- PostgreSQL: `localhost:5432` (DB `dwh`, User/Pass `dwh`/`dwh`)
+- pgAdmin: `http://localhost:5050` (admin@example.com/admin)
+- Superset: `http://localhost:8088` (admin/admin)
+
+
+### Option A: ETL ausführen (empfohlen)
+Dieser Weg ist unabhängig von externen Dumps und lädt eine begrenzte Datenmenge lokal.
 
 1) Environment-Datei anlegen:
 
@@ -22,18 +30,45 @@ cp .env.example .env
 docker compose up -d
 ```
 
+3) ETL ausführen (Docker):
+
+```bash
+docker compose --profile etl up --build etl
+```
+Hinweis: Der ETL ist bewusst so ausgelegt, dass er mit überschaubarem Datenumfang lauffähig ist und sich über Environment-Variablen skalieren lässt.
+
 Optional: Superset starten:
 
 ```bash
 docker compose --profile superset up -d superset
 ```
 
-Standarddienste (aus `.env.example`):
-- PostgreSQL: `localhost:5432` (DB `dwh`, User/Pass `dwh`/`dwh`)
-- pgAdmin: `http://localhost:5050` (admin@example.com/admin)
-- Superset: `http://localhost:8088` (admin/admin)
+### Option B: SQL-Dump importieren (optional, für sofort gefüllte Dashboards)
+Wenn Dashboards direkt Daten anzeigen sollen, kann alternativ ein Data-only SQL-Dump importiert werden.
+Der Dump wird beim ersten Start automatisch geladen, wenn er im Verzeichnis dumps/ liegt.
+Ein passender Dump (~180 MB) ist verfügbar unter:
+- GitHub Release (empfohlen, stabil): Release-Assets des Repositories (Datei muss entpackt werden)
+- Hessenbox (alternativ): https://next.hessenbox.de/index.php/s/abzGnaj43oW6fwd
 
-## Datenquellen (kurz)
+Weitere Details zum Import siehe Abschnitt „Daten-Dump (Import)”.
+
+
+## Architektur (Docker)
+
+Der Stack besteht aus folgenden dockerisierten Komponenten:
+
+- **postgres**: PostgreSQL-Datenbank (persistiert über Docker-Volume)
+- **pgadmin**: Admin-UI für Postgres (optional, nur zur Entwicklung)
+- **etl** (Profile `etl`): Python-ETL, das Steam News + SteamSpy lädt und ins DWH schreibt
+- **superset** (Profile `superset`): BI-Frontend für Dashboards (optional)
+
+Datenfluss:
+Steam APIs → `etl` → `postgres` → (optional) `superset`
+
+![Architektur](docs/img/architektur.png)
+
+
+## Datenquellen
 
 - Steam News API: Offizielle Steam API; News-Inhalte und Metadaten pro App/Spiel
 - SteamSpy API: Inoffizielle Sammlung von abgeschätzten Statistik-Snapshots pro App (Owners, CCU, Reviews, Preise)
@@ -65,7 +100,7 @@ Dimensionen:
 
 Hinweis: `dim_update_content` referenziert `dim_app`, da `update_id` nur pro App eindeutig ist --> SteamSpy API liefert doppelte update_ids für verschiede Apps.
 
-## ETL (kurz)
+## ETL
 
 Ein Initial-Run lädt die Basisdaten. Danach läuft der ETL inkrementell (neue Steam-News seit letztem Timestamp + neuer SteamSpy-Snapshot).
 
@@ -131,9 +166,13 @@ docker compose cp postgres:/tmp/dwh_data.dump dumps/dwh_data.dump
 - Join zwischen `dim_update_content` und `dim_app` erhöht Join-Aufwand.
 
 ## Dokumentation
-
 Für eine detailliertere Dokumentation bitte folgende Dateien betrachten:
-API Mappings auf DWH Schema: `docs/mapping-steam-news.md`, `docs/mapping-steamspy.md`
+
+- API Mappings auf DWH Schema: [Steam News Mapping](docs/mapping-steam-news.md), [SteamSpy API Mapping](docs/mapping-steamspy.md)
+- Dokumentation ETL Prozess: [ETL Prozess](docs/etl.md)
+- ENV Parameter / Konfiguration: [Konfiguration / ENV](docs/configuration.md)
+
+
 
 ## Repository-Struktur
 

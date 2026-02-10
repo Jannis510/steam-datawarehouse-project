@@ -1,5 +1,7 @@
 # Mapping: SteamSpy API -> DWH
 
+URL: https://steamspy.com/api.php?request=all
+
 ## Beispiel (kurz)
 
 ```
@@ -27,23 +29,23 @@
 
 ## Mapping-Tabelle
 
-| API-Feld           | Ziel im DWH                                     | Begründung         |
-| ------------------ | ---------------------------------------------- |--------------------|
-| `appid`            | `fact_steamspy_stats.app_id`, `dim_app.app_id`  | Fremdschluessel    |
-| `name`             | `dim_app.app_name`                              | Stammdaten         |
-| `developer`        | `dim_app.developer`                             | Stammdaten         |
-| `publisher`        | `dim_app.publisher`                             | Stammdaten         |
-| `owners`           | `owners_min`, `owners_max`                      | Range in zwei INTs |
-| `ccu`              | `fact_steamspy_stats.ccu`                       | Snapshot-Metrik    |
-| `positive`         | `fact_steamspy_stats.positive`                  | Snapshot-Metrik    |
-| `negative`         | `fact_steamspy_stats.negative`                  | Snapshot-Metrik    |
-| `userscore`        | `fact_steamspy_stats.userscore`                 | Snapshot-Metrik    |
-| `average_forever`  | `fact_steamspy_stats.average_forever`           | Snapshot-Metrik    |
-| `median_forever`   | `fact_steamspy_stats.median_forever`            | Snapshot-Metrik    |
-| `average_2weeks`   | `fact_steamspy_stats.average_2weeks`            | Snapshot-Metrik    |
-| `median_2weeks`    | `fact_steamspy_stats.median_2weeks`             | Snapshot-Metrik    |
-| `price`            | `fact_steamspy_stats.price`                     | Snapshot-Metrik    |
-| `initialprice`     | `fact_steamspy_stats.initialprice`              | Snapshot-Metrik    |
-| `discount`         | `fact_steamspy_stats.discount`                  | Snapshot-Metrik    |
+| API-Feld           | Ziel im DWH                                     | Begründung                     |
+| ------------------ | ---------------------------------------------- |--------------------------------|
+| `appid`            | `fact_steamspy_stats.app_id`, `dim_app.app_id`  | Fremdschluessel                |
+| `name`             | `dim_app.app_name`                              | Stammdaten                     |
+| `developer`        | `dim_app.developer`                             | Stammdaten                     |
+| `publisher`        | `dim_app.publisher`                             | Stammdaten                     |
+| `owners`           | `owners_min`, `owners_max`                      | Range in zwei INTs ohne Kommas |
+| `ccu`              | `fact_steamspy_stats.ccu`                       | Snapshot-Metrik                |
+| `positive`         | `fact_steamspy_stats.positive`                  | Snapshot-Metrik                |
+| `negative`         | `fact_steamspy_stats.negative`                  | Snapshot-Metrik                |
+| `userscore`        | `fact_steamspy_stats.userscore`                 | Snapshot-Metrik                |
+| `average_forever`  | `fact_steamspy_stats.average_forever`           | Snapshot-Metrik                |
+| `median_forever`   | `fact_steamspy_stats.median_forever`            | Snapshot-Metrik                |
+| `average_2weeks`   | `fact_steamspy_stats.average_2weeks`            | Snapshot-Metrik                |
+| `median_2weeks`    | `fact_steamspy_stats.median_2weeks`             | Snapshot-Metrik                |
+| `price`            | `fact_steamspy_stats.price`                     | Snapshot-Metrik                |
+| `initialprice`     | `fact_steamspy_stats.initialprice`              | Snapshot-Metrik                |
+| `discount`         | `fact_steamspy_stats.discount`                  | Snapshot-Metrik                |
 
 Hinweis: Für den Uni-Umfang wird nur Seite 0 des `all`-Endpoints geladen (1000 größte Spiele).
