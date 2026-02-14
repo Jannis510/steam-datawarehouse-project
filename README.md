@@ -188,4 +188,3 @@ Für eine detailliertere Dokumentation bitte folgende Dateien betrachten:
 ## Lizenz
 
 MIT. Siehe `LICENSE`.
-

@@ -113,8 +113,8 @@ Datei: `imports/superset/dashboard_run_explorer.zip`
 Fokus:
 - Analyse nach ausgewähltem ETL-Run (Filter `etl_run_id`)
 - Vergleich von Kennzahlen zwischen Runs
-- Geeignet für tägliche ETL-Läfe (Run für Run nachvollziehen)
-- Aufbau des Dashboard identisch zum Latest ETL Snapshot (Latest ELT = Run Explorer mit dem neusten Abgeschlossenen Run)
+- Geeignet für tägliche ETL-Läufe (Run für Run nachvollziehen)
+- Aufbau des Dashboard identisch zum Latest ETL Snapshot (Latest ETL = Run Explorer mit dem neuesten abgeschlossenen Run)
 
 Verwendete Datasets/Views:
 - `vw_app_overview_by_etl_run`
@@ -125,5 +125,7 @@ Hinweis zum 30-Tage-Kontext:
 - Damit ist ein Run-basierter Vergleich möglich, auch wenn ETL täglich läuft.
 
 ## 5) Generelle Anmerkungen
-Bei laufenden ETL-Prozessen kann es vorkommen, dass einzelne Grafiken vorübergehend nicht vollständig oder inkonsistent sind. Der Grund ist, dass mehrere Auswertungen auf run-basierten Views (etl_run_id) und dem Laufstatus in dim_etl_run aufbauen. Deshalb sollten Dashboards erst final bewertet werden, wenn der jeweilige ETL-Run vollständig mit dem Status success abgeschlossen ist.
-Außerdem werden aktuell bewusst nicht alle im Datenmodell verfügbaren Kennzahlen in den Dashboards genutzt. Es existieren zusätzliche Metriken wie average_forever, median_forever, average_2weeks, median_2weeks sowie weitere Delta-Kennzahlen, die theoretisch ebenfalls visualisiert werden können. Für die aktuelle Auswertung lag der Fokus jedoch auf zentralen KPIs (z. B. CCU, News 7/30 Tage, Preis/Discount, Run-Vergleich), um die Dashboards übersichtlich und interpretierbar zu halten. Eine spätere Erweiterung um weitere Metriken ist ohne Schemaänderung möglich.
+- Bei laufenden ETL-Prozessen kann es vorkommen, dass einzelne Grafiken vorübergehend nicht vollständig oder inkonsistent sind. Der Grund ist, dass mehrere Auswertungen auf run-basierten Views (`etl_run_id`) und dem Laufstatus in `dim_etl_run` aufbauen. Deshalb sollten Dashboards erst final bewertet werden, wenn der jeweilige ETL-Run vollständig mit dem Status `success` abgeschlossen ist.
+- Außerdem werden aktuell bewusst nicht alle im Datenmodell verfügbaren Kennzahlen in den Dashboards genutzt. Es existieren zusätzliche Metriken wie `average_forever`, `median_forever`, `average_2weeks`, `median_2weeks` sowie weitere Delta-Kennzahlen, die theoretisch ebenfalls visualisiert werden können. Für die aktuelle Auswertung lag der Fokus jedoch auf zentralen KPIs (z. B. CCU, News 7/30 Tage, Preis/Discount, Run-Vergleich), um die Dashboards übersichtlich und interpretierbar zu halten. Eine spätere Erweiterung um weitere Metriken ist ohne Schemaänderung möglich.
+
+
