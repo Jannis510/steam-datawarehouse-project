@@ -14,6 +14,19 @@ Standarddienste (aus `.env.example`):
 - pgAdmin: `http://localhost:5050` (admin@example.com/admin)
 - Superset: `http://localhost:8088` (admin/admin)
 
+### Hinweis zu Zeilenenden (LF statt CRLF)
+
+Für Docker/Linux-Skripte müssen Zeilenenden im LF-Format vorliegen. CRLF kann dazu führen, dass Container-Entrypoints oder Shell-Skripte nicht starten.
+Gerade unter Windows kann es passieren, dass Git oder die IDE (z. B. IntelliJ/PyCharm/VS Code) Dateien automatisch auf CRLF umstellt.
+Das Repository erzwingt LF bereits über `.gitattributes`.
+Falls lokal trotzdem Probleme auftreten, gibt es zwei Wege:
+
+1. Bereits geklontes Repository global korrigieren:
+```bash
+git config core.autocrlf false
+git add --renormalize .
+```
+2. Alternativ in der IDE/den Editor-Einstellungen das Zeilenende auf LF umstellen (ggf. pro Datei oder als Standard für das Projekt).
 
 ### Option A: ETL ausführen (empfohlen)
 Dieser Weg ist unabhängig von externen Dumps und lädt eine begrenzte Datenmenge lokal.
@@ -188,3 +201,5 @@ Für eine detailliertere Dokumentation bitte folgende Dateien betrachten:
 ## Lizenz
 
 MIT. Siehe `LICENSE`.
+
+
