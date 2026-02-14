@@ -22,6 +22,20 @@ Die Datei `.env.example` ist bereits mit **funktionsfähigen Testwerten** befül
 
 ---
 
+### Fallback-Aliase für lokale Starts
+
+Neben `POSTGRES_*` akzeptiert der ETL zusätzlich folgende Alias-Variablen (Fallback in `scripts/steam_etl_common.py`):
+
+| Alias-Variable | Fallback zu |
+| -------------- | ----------- |
+| `DB_HOST` | `POSTGRES_HOST` |
+| `DB_PORT` | `POSTGRES_PORT` |
+| `DB_NAME` | `POSTGRES_DB` |
+| `DB_USER` | `POSTGRES_USER` |
+| `DB_PASSWORD` | `POSTGRES_PASSWORD` |
+
+Hinweis: `POSTGRES_*` hat Priorität; `DB_*` ist nur als kompatibler Fallback gedacht.
+
 ## ETL / Steuerung
 
 | Variable              | Zweck                                                      |

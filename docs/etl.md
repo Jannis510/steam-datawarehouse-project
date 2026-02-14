@@ -172,6 +172,32 @@ Ziel:
 * Startet `steam_etl_incremental.py`
 
 
+## Recovery & Smoke-Test
+
+### Schema auf bestehendem Volume nachziehen
+
+Wenn das Postgres-Volume bereits existiert und neue Init-SQL nicht automatisch gelaufen ist, kann das Schema manuell angewendet werden:
+
+```bash
+bash scripts/apply_schema.sh
+```
+
+Das Script führt im laufenden Postgres-Service `001_create_schema.sql` aus.
+
+### Smoke-Test manuell ausführen
+
+Der Smoke-Test liegt in `scripts/smoke_test.sql` und kann manuell gestartet werden:
+
+```bash
+docker compose exec -T postgres psql -U dwh -d dwh -f /opt/smoke_test.sql
+```
+
+Erwartete Ergebnisse (Kurzcheck):
+
+* `fact_news_null_keys` und `fact_steamspy_null_keys` sollten `0` sein.
+* Orphan-Checks (`fact_news_orphan_*`, `fact_steamspy_orphan_timestamp`) sollten `0` sein.
+* Tabellen-Counts sollten > 0 sein, wenn ETL oder Dump-Import erfolgreich gelaufen ist.
+
 ## Designentscheidungen & Limitationen
 
 * Append-only Facts (keine Korrekturen historischer Daten)

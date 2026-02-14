@@ -171,6 +171,7 @@ Für eine detailliertere Dokumentation bitte folgende Dateien betrachten:
 
 - API Mappings auf DWH Schema: [Steam News Mapping](docs/mapping-steam-news.md), [SteamSpy API Mapping](docs/mapping-steamspy.md)
 - Dokumentation ETL Prozess: [ETL Prozess](docs/etl.md)
+- Dokumentation ENV Variablen & Systemkonfiguration: [Konfiguration](docs/configuration.md)
 
 - Superset Setup + Dashboards + Auswertung: [Superset & Auswertung](docs/superset-auswertung.md)
 
