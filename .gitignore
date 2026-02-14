@@ -2,3 +2,4 @@
 .idea/
 
 /dumps/*.dump
+/dumps/*.sql

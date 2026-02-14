@@ -1,0 +1,159 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    name: Validate Repository
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate Python syntax
+        run: |
+          python -m compileall -q scripts docker/superset
+
+      - name: Validate shell scripts syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r file; do
+            bash -n "$file"
+          done < <(find scripts docker -type f -name "*.sh" | sort)
+
+      - name: Validate docker compose file
+        run: |
+          docker compose -f docker-compose.yml config -q
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Validate SQL scripts against PostgreSQL
+        env:
+          PGPASSWORD: postgres
+        run: |
+          set -euo pipefail
+          for i in {1..30}; do
+            pg_isready -h 127.0.0.1 -p 5432 -U postgres -d postgres && break
+            sleep 2
+          done
+
+          psql -h 127.0.0.1 -p 5432 -U postgres -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE dwh;"
+          psql -h 127.0.0.1 -p 5432 -U postgres -d dwh -v ON_ERROR_STOP=1 -f docker/postgres/init/001_create_schema.sql
+          psql -h 127.0.0.1 -p 5432 -U postgres -d dwh -v ON_ERROR_STOP=1 -f docker/postgres/init/003_views.sql
+          psql -h 127.0.0.1 -p 5432 -U postgres -d dwh -v ON_ERROR_STOP=1 -f scripts/smoke_test.sql
+          psql -h 127.0.0.1 -p 5432 -U postgres -d postgres -v ON_ERROR_STOP=1 -f docker/postgres/init/002_superset_user.sql
+
+      - name: Validate required assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f README.md
+          test -f imports/superset/dashboard_app_details.zip
+          test -f imports/superset/dashboard_latest_elt.zip
+          test -f imports/superset/dashboard_run_explorer.zip
+
+      - name: Validate LF line endings for Docker/Linux files
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -IUrn $'\r' --include='*.sh' --include='*.py' --include='*.sql' --include='*.yml' --include='*.yaml' --include='Dockerfile' scripts docker .env.example docker-compose.yml; then
+            echo "CRLF detected in files that should use LF."
+            exit 1
+          fi
+
+  integration:
+    name: Integration (Docker Stack Smoke)
+    runs-on: ubuntu-latest
+    needs: validate
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare CI env file
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .env.example .env
+          sed -i 's|^POSTGRES_DUMP_FILE=.*|POSTGRES_DUMP_FILE=|' .env
+          sed -i 's|^POSTGRES_SMOKE_TEST=.*|POSTGRES_SMOKE_TEST=0|' .env
+
+      - name: Start PostgreSQL
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose up -d postgres
+
+          for i in {1..40}; do
+            status="$(docker inspect -f '{{.State.Health.Status}}' dwh-postgres 2>/dev/null || true)"
+            if [ "$status" = "healthy" ]; then
+              break
+            fi
+            sleep 3
+          done
+
+          status="$(docker inspect -f '{{.State.Health.Status}}' dwh-postgres)"
+          test "$status" = "healthy"
+
+      - name: Verify DB schema in running container
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose exec -T postgres psql -U dwh -d dwh -v ON_ERROR_STOP=1 -c "SELECT COUNT(*) FROM dwh.dim_app;"
+          docker compose exec -T postgres psql -U dwh -d dwh -v ON_ERROR_STOP=1 -c "SELECT COUNT(*) FROM information_schema.views WHERE table_schema='dwh';"
+
+      - name: Start Superset
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose --profile superset up -d --build superset
+
+          for i in {1..60}; do
+            code="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8088/health || true)"
+            if [ "$code" = "200" ]; then
+              break
+            fi
+            sleep 5
+          done
+
+          code="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8088/health)"
+          test "$code" = "200"
+
+      - name: Print container logs on failure
+        if: failure()
+        shell: bash
+        run: |
+          docker compose logs postgres || true
+          docker compose logs superset || true
+
+      - name: Teardown
+        if: always()
+        shell: bash
+        run: |
+          docker compose down -v --remove-orphans

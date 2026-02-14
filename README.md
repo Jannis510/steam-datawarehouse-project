@@ -143,7 +143,9 @@ Wenn ein Data-only Dump in `dumps/` liegt, wird er beim ersten Start automatisch
 1) Dump-Datei aus der Hessenbox in `dumps/` legen:
 
 Hessenbox-Link:
-https://next.hessenbox.de/index.php/s/abzGnaj43oW6fwd
+https://next.hessenbox.de/index.php/s/HfNHxrwWEEHj7By
+
+Wichtig: FÜr den Autoimport die `.dump`-Datei verwenden. Hierbei handelt es sich um eine komprimierte Data Only Datei für den Auto Import. Auto-Import mit Backup Datein (Data+Schema) führen vermutlich zu Datenbankkonflikten.
 
 2) In `.env` setzen:
 
