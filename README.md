@@ -173,6 +173,54 @@ docker compose exec -T postgres pg_dump -U dwh -d dwh --data-only --format=c -f 
 docker compose cp postgres:/tmp/dwh_data.dump dumps/dwh_data.dump
 ```
 
+## CI / Qualitätssicherung
+
+Das Repository enthält eine GitHub Actions Pipeline (`.github/workflows/ci.yml`), die automatisierte Prüfungen auf zwei Ebenen durchführt.
+
+### Validate
+
+Der Job `validate` überprüft strukturelle und fachliche Korrektheit:
+
+* Python-Syntaxprüfung (`compileall`)
+* Shell-Skript-Syntaxprüfung
+* Validierung der `docker-compose.yml`
+* SQL-Validierung gegen eine frische PostgreSQL-Instanz
+* Prüfung auf unerwünschte CRLF-Zeilenenden
+* Existenzprüfung kritischer Projektdateien
+
+Für die datenbankseitige Validierung wird ein deterministisches Minimal-Dataset geladen (`scripts/ci_fixture_minimal.sql`). Anschließend werden mit `scripts/ci_assertions.sql` zentrale Views und KPI-Berechnungen geprüft (z. B. Aggregationen, Deltas, Rolling News Counts).
+
+Damit wird sichergestellt, dass:
+
+* das Schema ausführbar ist,
+* Views korrekt erstellt werden,
+* zentrale Kennzahlen erwartete Ergebnisse liefern.
+
+### Integration
+
+Der Job `integration` führt einen Docker-Stack-Smoke-Test durch:
+
+* Start von PostgreSQL im Compose-Stack
+* Start von Apache Superset (inkl. Healthcheck)
+* Import der bereitgestellten Dashboards
+* Verifikation, dass Dashboards in der Superset-Metadatenbank registriert wurden
+* automatisches Teardown des Stacks
+
+Damit wird sichergestellt, dass:
+
+* der Stack in einer sauberen Linux-Umgebung startet,
+* Superset betriebsbereit ist,
+* Dashboard-Imports technisch funktionieren.
+
+### Ziel der CI
+
+Die Pipeline stellt reproduzierbar sicher, dass:
+
+* das Projekt in einer isolierten Umgebung build- und startfähig ist,
+* Datenbanklogik konsistent bleibt,
+* typische analytische Kennzahlen deterministisch geprüft werden,
+* Dashboard-Exporte importierbar sind.
+
 ## Limitationen
 
 - SteamSpy-Umfang ist auf Seite 0 des `all`-Endpoints begrenzt.
@@ -203,5 +251,6 @@ Für eine detailliertere Dokumentation bitte folgende Dateien betrachten:
 ## Lizenz
 
 MIT. Siehe `LICENSE`.
+
 
 

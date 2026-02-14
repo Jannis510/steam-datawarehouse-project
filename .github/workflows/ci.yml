@@ -1,3 +1,4 @@
+# .github/workflows/ci.yml
 name: CI
 
 on:
@@ -8,6 +9,7 @@ jobs:
   validate:
     name: Validate Repository
     runs-on: ubuntu-latest
+
     services:
       postgres:
         image: postgres:16-alpine
@@ -58,14 +60,24 @@ jobs:
           PGPASSWORD: postgres
         run: |
           set -euo pipefail
+
           for i in {1..30}; do
             pg_isready -h 127.0.0.1 -p 5432 -U postgres -d postgres && break
             sleep 2
           done
 
-          psql -h 127.0.0.1 -p 5432 -U postgres -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE dwh;"
+          # Idempotent CREATE DATABASE
+          psql -h 127.0.0.1 -p 5432 -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -c "SELECT 'CREATE DATABASE dwh' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname='dwh')\gexec"
+
           psql -h 127.0.0.1 -p 5432 -U postgres -d dwh -v ON_ERROR_STOP=1 -f docker/postgres/init/001_create_schema.sql
           psql -h 127.0.0.1 -p 5432 -U postgres -d dwh -v ON_ERROR_STOP=1 -f docker/postgres/init/003_views.sql
+
+          # Deterministic fixture + assertions
+          psql -h 127.0.0.1 -p 5432 -U postgres -d dwh -v ON_ERROR_STOP=1 -f scripts/ci_fixture_minimal.sql
+          psql -h 127.0.0.1 -p 5432 -U postgres -d dwh -v ON_ERROR_STOP=1 -f scripts/ci_assertions.sql
+
+          # Your existing smoke tests + superset user
           psql -h 127.0.0.1 -p 5432 -U postgres -d dwh -v ON_ERROR_STOP=1 -f scripts/smoke_test.sql
           psql -h 127.0.0.1 -p 5432 -U postgres -d postgres -v ON_ERROR_STOP=1 -f docker/postgres/init/002_superset_user.sql
 
@@ -74,6 +86,8 @@ jobs:
         run: |
           set -euo pipefail
           test -f README.md
+          test -f scripts/ci_fixture_minimal.sql
+          test -f scripts/ci_assertions.sql
           test -f imports/superset/dashboard_app_details.zip
           test -f imports/superset/dashboard_latest_elt.zip
           test -f imports/superset/dashboard_run_explorer.zip
@@ -82,7 +96,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if grep -IUrn $'\r' --include='*.sh' --include='*.py' --include='*.sql' --include='*.yml' --include='*.yaml' --include='Dockerfile' scripts docker .env.example docker-compose.yml; then
+          if grep -IUrn $'\r' --include='*.sh' --include='*.py' --include='*.sql' --include='*.yml' --include='*.yaml' --include='Dockerfile' \
+              scripts docker .env.example docker-compose.yml; then
             echo "CRLF detected in files that should use LF."
             exit 1
           fi
@@ -96,6 +111,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install curl
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl
+
       - name: Prepare CI env file
         shell: bash
         run: |
@@ -103,6 +123,7 @@ jobs:
           cp .env.example .env
           sed -i 's|^POSTGRES_DUMP_FILE=.*|POSTGRES_DUMP_FILE=|' .env
           sed -i 's|^POSTGRES_SMOKE_TEST=.*|POSTGRES_SMOKE_TEST=0|' .env
+          sed -i 's|^SUPERSET_IMPORT_DASHBOARDS=.*|SUPERSET_IMPORT_DASHBOARDS=0|' .env
 
       - name: Start PostgreSQL
         shell: bash
@@ -144,6 +165,25 @@ jobs:
 
           code="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8088/health)"
           test "$code" = "200"
+
+      - name: Dashboard import smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose exec -T superset python /app/patch_superset_imports.py /app/imports /tmp/imports-ci
+          docker compose exec -T superset /bin/bash -lc "superset import-dashboards -p /tmp/imports-ci/dashboard_app_details.zip -u admin"
+          docker compose exec -T superset /bin/bash -lc "superset import-dashboards -p /tmp/imports-ci/dashboard_latest_elt.zip -u admin"
+          docker compose exec -T superset /bin/bash -lc "superset import-dashboards -p /tmp/imports-ci/dashboard_run_explorer.zip -u admin"
+
+      - name: Verify dashboards exist in Superset metadata DB (non-fragile)
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Just verify "we have at least 3 dashboards" after import.
+          # (Avoid title LIKE checks that break when you rename dashboards.)
+          count="$(docker compose exec -T postgres psql -U superset -d superset -At -c "SELECT COUNT(*) FROM dashboards;")"
+          echo "Dashboards in superset DB: ${count}"
+          [ "${count:-0}" -ge 3 ]
 
       - name: Print container logs on failure
         if: failure()
