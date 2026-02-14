@@ -9,6 +9,9 @@ Es gibt zwei empfohlene Wege für den Einstieg:
 - Empfohlen (reproduzierbar): ETL-Skripte ausführen und Daten selbst laden
 - Optional (Demo/Visualisierung): SQL-Dump importieren, damit Dashboards sofort Daten anzeigen
 
+Kurzbericht:
+- [Kurzbericht](docs/kurzbericht.md)
+
 Standarddienste (aus `.env.example`):
 - PostgreSQL: `localhost:5432` (DB `dwh`, User/Pass `dwh`/`dwh`)
 - pgAdmin: `http://localhost:5050` (admin@example.com/admin)
@@ -146,7 +149,7 @@ Hessenbox-Link:
 https://next.hessenbox.de/index.php/s/HfNHxrwWEEHj7By
 
 Wichtig: FÜr den Autoimport die `.dump`-Datei verwenden. Hierbei handelt es sich um eine komprimierte Data Only Datei für den Auto Import. Auto-Import mit Backup Datein (Data+Schema) führen vermutlich zu Datenbankkonflikten.
-
+Einen vollständigen SQL Dump (DATA + SCHEMA) als SQL Format gibt es hier: https://next.hessenbox.de/index.php/s/9q3iPQyA8W9RnQi
 2) In `.env` setzen:
 
 ```bash
@@ -245,12 +248,10 @@ Für eine detailliertere Dokumentation bitte folgende Dateien betrachten:
 - `docker/`: Postgres, ETL, Superset Container
 - `scripts/`: Python-ETL
 - `docs/`: Bericht, Mappings, Diagramme
+- `.github/workflows`: CI Pipeline für Github
 - `dumps/`: optionale DB-Dumps
 - `imports/`: optionale Superset-Dashboards
 
 ## Lizenz
 
 MIT. Siehe `LICENSE`.
-
-
-
