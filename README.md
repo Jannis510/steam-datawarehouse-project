@@ -40,7 +40,7 @@ Hinweis: Der ETL ist bewusst so ausgelegt, dass er mit überschaubarem Datenumfa
 Optional: Superset starten:
 
 ```bash
-docker compose --profile superset up -d superset
+docker compose --profile superset up -d --build superset
 ```
 
 ### Option B: SQL-Dump importieren (optional, für sofort gefüllte Dashboards)
@@ -146,7 +146,8 @@ Hinweis: Der Import läuft nur beim ersten Start mit leerem Volume. Der Smoke-Te
 ## Superset Dashboards (Import)
 
 Wenn ZIP-Exporte in `imports/superset` liegen, können sie beim ersten Start automatisch importiert werden.
-Details stehen in `docs/submission.md`.
+Details zu Auto-Import, manueller Einrichtung und den drei Dashboards stehen in:
+- [Superset & Auswertung](docs/superset-auswertung.md)
 
 ## Data-only Dump erzeugen
 
@@ -170,7 +171,8 @@ Für eine detailliertere Dokumentation bitte folgende Dateien betrachten:
 
 - API Mappings auf DWH Schema: [Steam News Mapping](docs/mapping-steam-news.md), [SteamSpy API Mapping](docs/mapping-steamspy.md)
 - Dokumentation ETL Prozess: [ETL Prozess](docs/etl.md)
-- ENV Parameter / Konfiguration: [Konfiguration / ENV](docs/configuration.md)
+
+- Superset Setup + Dashboards + Auswertung: [Superset & Auswertung](docs/superset-auswertung.md)
 
 
 
@@ -185,3 +187,4 @@ Für eine detailliertere Dokumentation bitte folgende Dateien betrachten:
 ## Lizenz
 
 MIT. Siehe `LICENSE`.
+
