@@ -10,21 +10,21 @@
 
 ## Übersicht
 
-- 📌 Projektziel
-- 🏗 Architektur
-- 📊 Beispielhafte analytische Fragestellungen
-- 🗄 Data Model (ERM)
-- 🧪 Continuous Integration (CI) Qualitätssicherung
-- 🚀 Schnellstart (Docker)
-- Datenquellen
-- ETL
-- Daten-Dump (Import)
-- Superset Dashboards (Import)
-- Data-only Dump erzeugen
-- Limitationen
-- Dokumentation
-- Repository-Struktur
-- Lizenz
+- [📌 Projektziel](#-projektziel)
+- [🏗 Architektur](#-architektur)
+- [📊 Beispielhafte analytische Fragestellungen](#-beispielhafte-analytische-fragestellungen)
+- [🗄 Data Model (ERM)](#-data-model-erm)
+- [🧪 Continuous Integration (CI) Qualitätssicherung](#-continuous-integration-ci-qualitätssicherung)
+- [🚀 Schnellstart (Docker)](#-schnellstart-docker)
+- [Datenquellen](#datenquellen)
+- [ETL](#etl)
+- [Daten-Dump (Import)](#daten-dump-import)
+- [Superset Dashboards (Import)](#superset-dashboards-import)
+- [Data-only Dump erzeugen](#data-only-dump-erzeugen)
+- [Limitationen](#limitationen)
+- [Dokumentation](#dokumentation)
+- [Repository-Struktur](#repository-struktur)
+- [Lizenz](#lizenz)
 
 
 ---
@@ -184,7 +184,7 @@ git add --renormalize .
 ```
 2. Alternativ in der IDE/den Editor-Einstellungen das Zeilenende auf LF umstellen (ggf. pro Datei oder als Standard für das Projekt).
 
-### Option A: ETL ausführen (empfohlen)
+### Option A: DWH mit ETL Prozess ausführen (empfohlen)
 Dieser Weg ist unabhängig von externen Dumps und lädt eine begrenzte Datenmenge lokal.
 
 1) Environment-Datei anlegen:
@@ -212,11 +212,11 @@ Optional: Superset starten:
 docker compose --profile superset up -d --build superset
 ```
 
-### Option B: SQL-Dump importieren (optional, für sofort gefüllte Dashboards)
+### Option B: 📦 DWH mit Demo-Daten Import (optional, für sofort gefüllte Dashboards)
 Wenn Dashboards direkt Daten anzeigen sollen, kann alternativ ein Data-only SQL-Dump importiert werden.
 Der Dump wird beim ersten Start automatisch geladen, wenn er im Verzeichnis dumps/ liegt.
 Ein passender Dump (~180 MB) ist verfügbar unter:
-- GitHub Release (empfohlen, stabil): Release-Assets des Repositories (Datei muss entpackt werden)
+- v1.0 Demo Data - GitHub Release (empfohlen; Release Asset muss vorher entpackt werden): https://github.com/Jannis510/steam-datawarehouse-project/releases/tag/v1.0-demo-data
 - Hessenbox (alternativ): https://next.hessenbox.de/index.php/s/abzGnaj43oW6fwd
 
 Weitere Details zum Import siehe Abschnitt „Daten-Dump (Import)”.
@@ -266,11 +266,15 @@ Wenn ein Data-only Dump in `dumps/` liegt, wird er beim ersten Start automatisch
 
 1) Dump-Datei aus der Hessenbox in `dumps/` legen:
 
-Hessenbox-Link:
+- v1.0 Demo Data (empfohlen; muss entpackt werden)
+https://github.com/Jannis510/steam-datawarehouse-project/releases/tag/v1.0-demo-data
+
+- Hessenbox-Link:
 https://next.hessenbox.de/index.php/s/HfNHxrwWEEHj7By
 
 Wichtig: FÜr den Autoimport die `.dump`-Datei verwenden. Hierbei handelt es sich um eine komprimierte Data Only Datei für den Auto Import. Auto-Import mit Backup Datein (Data+Schema) führen vermutlich zu Datenbankkonflikten.
 Einen vollständigen SQL Dump (DATA + SCHEMA) als SQL Format gibt es hier: https://next.hessenbox.de/index.php/s/9q3iPQyA8W9RnQi
+
 2) In `.env` setzen:
 
 ```bash
