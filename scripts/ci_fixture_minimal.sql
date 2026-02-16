@@ -1,10 +1,9 @@
 -- scripts/ci_fixture_minimal.sql
--- Minimal fixture data for CI SQL/view validation.
--- Purpose: deterministic, tiny dataset to validate core views and KPIs.
+-- Deterministic fixture data used by CI SQL assertions.
 
 SET search_path TO dwh;
 
--- Clean slate (safe if tables are empty)
+-- Reset DWH tables so assertions run against a known dataset.
 TRUNCATE TABLE
   fact_news,
   dim_update_content,

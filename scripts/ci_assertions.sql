@@ -1,6 +1,5 @@
 -- scripts/ci_assertions.sql
--- Assertions for CI fixture-based SQL/view validation.
--- Fails with an exception if expected results are not met.
+-- Assert expected metrics on the deterministic CI fixture dataset.
 
 SET search_path TO dwh;
 

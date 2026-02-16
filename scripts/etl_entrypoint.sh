@@ -18,7 +18,7 @@ fi
 
 log "Configuring cron with schedule: ${cron_schedule}"
 
-# Persist env for cron jobs (cron has minimal env)
+# Persist selected environment variables for cron jobs.
 env_file="/app/.cron_env"
 ( env | grep -E '^(POSTGRES_|LOG_|NEWS_|COMMIT_|ETL_|TZ)=' || true ) > "${env_file}"
 chmod 0600 "${env_file}"
@@ -27,7 +27,7 @@ cron_file="/etc/cron.d/etl"
 {
   echo "SHELL=/bin/sh"
   echo "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-  # Use /bin/sh -lc to get predictable behavior and redirect logs to container stdout
+  # Run via /bin/sh -lc and stream output to container stdout/stderr.
   echo "${cron_schedule} root /bin/sh -lc 'python /app/scripts/run_incremental_cron.py >> /proc/1/fd/1 2>&1'"
 } > "${cron_file}"
 

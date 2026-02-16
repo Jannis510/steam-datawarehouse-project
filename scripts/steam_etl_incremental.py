@@ -30,7 +30,7 @@ def run_incremental() -> None:
 
     log_every, sleep_between_apps, page_size, max_pages, commit_every_apps = get_tuning()
 
-    # Phase 0: SteamSpy (holt neue apps, updates metadata)
+    # Phase 0: Refresh app metadata and collect the latest SteamSpy snapshot.
     steamspy_payload = fetch_steamspy_data(session)
 
     conn = get_db_connection()

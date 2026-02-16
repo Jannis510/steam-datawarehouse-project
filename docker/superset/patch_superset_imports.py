@@ -5,6 +5,7 @@ from pathlib import Path
 
 
 def _patched_yaml(text: str, uri: str, force: bool) -> str:
+    # Replace masked or explicitly forced sqlalchemy_uri values only.
     mask_tokens = ("XXXXXXXXXX", "REDACTED", "***")
     changed = False
     lines = []
@@ -22,6 +23,7 @@ def _patched_yaml(text: str, uri: str, force: bool) -> str:
 def patch_imports(src_dir: Path, dst_dir: Path, uri: str, force: bool) -> None:
     dst_dir.mkdir(parents=True, exist_ok=True)
     for zip_path in src_dir.glob("*.zip"):
+        # Rebuild archive to preserve all files while patching database YAML entries.
         with zipfile.ZipFile(zip_path) as src_zip:
             out_path = dst_dir / zip_path.name
             with zipfile.ZipFile(out_path, "w") as dst_zip:
@@ -43,6 +45,7 @@ def main() -> int:
     if not src_dir.is_dir():
         print(f"Source dir not found: {src_dir}")
         return 1
+    # Prefer explicit import URI, fallback to shared DWH URI.
     uri = os.getenv("SUPERSET_IMPORT_SQLALCHEMY_URI") or os.getenv("DWH_SQLALCHEMY_URI", "")
     force = os.getenv("SUPERSET_IMPORT_FORCE_URI", "0") == "1"
     patch_imports(src_dir, dst_dir, uri, force)

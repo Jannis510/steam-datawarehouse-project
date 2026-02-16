@@ -12,6 +12,7 @@ services:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - dwh-postgres-data:/var/lib/postgresql/data
+      # Entry-point init scripts are executed on first container initialization.
       - ./docker/postgres/init:/docker-entrypoint-initdb.d
       - ./dumps:/dumps:ro
       - ./scripts/smoke_test.sql:/opt/smoke_test.sql:ro
@@ -45,6 +46,7 @@ services:
       context: ./docker/superset
       dockerfile: Dockerfile
     container_name: ${SUPERSET_CONTAINER_NAME:-dwh-superset}
+    # Start only when explicitly enabled (docker compose --profile superset ...).
     profiles: ["superset"]
     env_file:
       - .env
@@ -61,6 +63,7 @@ services:
         condition: service_healthy
     volumes:
       - superset-home:/app/superset_home
+      # Read-only dashboard export source for optional import on startup.
       - ./imports/superset:/app/imports:ro
     restart: unless-stopped
 
@@ -68,6 +71,7 @@ services:
     build:
       context: .
       dockerfile: docker/etl/Dockerfile
+    # Start only when explicitly enabled (docker compose --profile etl ...).
     profiles: ["etl"]
     depends_on:
       postgres:

@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 
 
 def load_env_if_present() -> None:
-    # optional: falls du lokal .env nutzt
+    # Load local .env when present (useful for local runs outside Docker).
     load_dotenv(override=False)
 
 
@@ -42,9 +42,7 @@ def get_db_connection():
     return psycopg2.connect(host=host, port=port, dbname=db, user=user, password=pw)
 
 
-# ----------------------------
-# HTTP helpers (minimal robust)
-# ----------------------------
+# HTTP helpers
 def http_get_json(
     session: requests.Session,
     url: str,
@@ -205,9 +203,7 @@ def fetch_news_for_app(
     return all_items, meta
 
 
-# ----------------------------
 # DB upserts
-# ----------------------------
 def upsert_timestamp(cur, ts: datetime) -> int:
     cur.execute(
         """

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-import os  # NEW
+import os
 import time
 from datetime import datetime
 from typing import Dict
@@ -30,10 +30,7 @@ def run_initial() -> None:
 
     log_every, sleep_between_apps, page_size, max_pages, commit_every_apps = get_tuning()
 
-    # ----------------------------
-    # TEST knobs (optional)
-    # ----------------------------
-    # 0 = unlimited
+    # Test knobs (optional). A value of 0 means "no limit".
     steamspy_limit = int(os.getenv("ETL_STEAMSPY_LIMIT", "0"))
     apps_limit = int(os.getenv("ETL_APPS_LIMIT", "0"))
     skip_news = os.getenv("ETL_SKIP_NEWS", "0") == "1"
@@ -93,15 +90,13 @@ def run_initial() -> None:
             conn.commit()
             logging.info("SteamSpy snapshot done in %.1fs", time.time() - t0)
 
-            # Optional: skip news phase entirely (fast smoke test)
+            # Optional fast path for smoke tests.
             if skip_news:
                 logging.info("TEST: Skipping news phase (ETL_SKIP_NEWS=1).")
                 run_status = "success"
                 return
 
-            # ----------------------------
-            # Phase 2: News (ALWAYS ALL) - optionally limited for tests
-            # ----------------------------
+            # Phase 2: News (full load, optionally limited for tests).
             with conn.cursor() as cur:
                 cur.execute("SELECT app_id, app_name FROM dwh.dim_app ORDER BY app_id;")
                 apps = cur.fetchall()

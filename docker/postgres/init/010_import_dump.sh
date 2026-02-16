@@ -5,6 +5,7 @@ DUMP_FILE="${POSTGRES_DUMP_FILE:-}"
 SMOKE_TEST="${POSTGRES_SMOKE_TEST:-0}"
 SMOKE_SQL="/opt/smoke_test.sql"
 
+# No dump configured: keep container init fast and continue startup.
 if [ -z "$DUMP_FILE" ]; then
   exit 0
 fi
@@ -14,6 +15,7 @@ if [ ! -f "$DUMP_FILE" ]; then
   exit 1
 fi
 
+# Route import by file extension: plain SQL via psql, binary/custom via pg_restore.
 case "$DUMP_FILE" in
   *.sql)
     echo "Importing SQL dump: $DUMP_FILE"
@@ -29,6 +31,7 @@ case "$DUMP_FILE" in
     ;;
 esac
 
+# Optional post-import verification, controlled by POSTGRES_SMOKE_TEST=1.
 if [ "$SMOKE_TEST" = "1" ] && [ -f "$SMOKE_SQL" ]; then
   echo "Running smoke test: $SMOKE_SQL"
   psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f "$SMOKE_SQL"

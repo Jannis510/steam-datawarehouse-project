@@ -3,7 +3,7 @@ import os
 import subprocess
 import sys
 
-# Cron has almost no env. Copy env of PID 1 (entrypoint) into this process env.
+# Cron jobs run with a minimal environment. Rehydrate selected vars from PID 1.
 with open("/proc/1/environ", "rb") as f:
     raw = f.read().split(b"\x00")
 

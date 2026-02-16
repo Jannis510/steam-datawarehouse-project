@@ -1,11 +1,10 @@
 #!/bin/bash
 set -e
 
-# 1) Metastore migrieren
+# 1) Run Superset metadata migrations.
 superset db upgrade
 
-# 2) Admin anlegen (CLI ohne --admin)
-# Falls User schon existiert: create-admin scheitert -> dann Passwort resetten
+# 2) Ensure admin account exists; reset password if user already exists.
 superset fab create-admin \
   --username "$ADMIN_USERNAME" \
   --firstname Superset \
@@ -16,10 +15,10 @@ superset fab create-admin \
       --username "$ADMIN_USERNAME" \
       --password "$ADMIN_PASSWORD"
 
-# 3) Rollen/Perms initialisieren
+# 3) Initialize default roles and permissions.
 superset init
 
-# 3b) Dashboards importieren (optional, nur einmal)
+# 3b) Optionally import dashboards once and persist a marker.
 IMPORT_DASHBOARDS="${SUPERSET_IMPORT_DASHBOARDS:-0}"
 IMPORT_DIR="${SUPERSET_IMPORT_DIR:-/app/imports}"
 IMPORT_WORK_DIR="${SUPERSET_IMPORT_WORK_DIR:-/tmp/imports}"
@@ -34,6 +33,7 @@ if [ "$IMPORT_DASHBOARDS" = "1" ] && [ -d "$IMPORT_DIR" ]; then
       found=1
       echo "Importing Superset dashboard: $file"
       if [ "$IMPORT_OVERWRITE" = "1" ]; then
+        # Older Superset versions may not support --overwrite for imports.
         echo "Warning: --overwrite not supported by this Superset version, importing without overwrite."
       fi
       superset import-dashboards -p "$file" -u "$ADMIN_USERNAME"
@@ -48,5 +48,5 @@ if [ "$IMPORT_DASHBOARDS" = "1" ] && [ -d "$IMPORT_DIR" ]; then
   fi
 fi
 
-# 4) Server starten
+# 4) Hand off to the default Superset server entrypoint.
 exec /usr/bin/run-server.sh
